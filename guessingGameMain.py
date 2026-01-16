@@ -88,31 +88,63 @@ class mainMenu(tk.Frame):
         inputsFrame = tk.Frame(self)
         inputsFrame.pack(pady=10)
 
+
         # Variables to hold the numeric values
         self.min_val = tk.StringVar(value=1)
         self.max_val = tk.StringVar(value=100)
 
+
         min_vcmd = (self.register(self._validate_min), "%P")
         max_vcmd = (self.register(self._validate_max), "%P")
 
-        tk.Label(inputsFrame, text="Min:", font=('Arial', 14)).grid(row=0, column=0, padx=8, pady=5, sticky="e")
-        self.min_spin = tk.Spinbox(inputsFrame, from_=-9999999, to=100, textvariable=self.min_val, width=8, font=('Arial', 14), increment=1, validate="key", validatecommand=min_vcmd)
-        self.min_spin.grid(row=0, column=1, padx=8, pady=5)
 
-        tk.Label(inputsFrame, text="Max:", font=('Arial', 14)).grid(row=0, column=2, padx=8, pady=5, sticky="e")
-        self.max_spin = tk.Spinbox(inputsFrame, from_=1, to=9999999, textvariable=self.max_val, width=8, font=('Arial', 14), increment=1, validate="key", validatecommand=max_vcmd)
-        self.max_spin.grid(row=0, column=3, padx=8, pady=5)
+        tk.Label(inputsFrame, text="Min:", font=('Arial', 14)).grid(row=0, column=0, padx=8, pady=5, sticky="e")
+        self.min_entry = tk.Entry(inputsFrame, textvariable=self.min_val, width=8, font=('Arial', 14), validate="key", validatecommand=min_vcmd)
+        self.min_entry.grid(row=0, column=1, padx=8, pady=5)
+
+        min_btns = tk.Frame(inputsFrame)
+        min_btns.grid(row=0, column=2, padx=(0, 10))
+        tk.Button(min_btns, text="▲", width=2, command=lambda: self._step("min", +1)).pack()
+        tk.Button(min_btns, text="▼", width=2, command=lambda: self._step("min", -1)).pack()
+
+        tk.Label(inputsFrame, text="Max:", font=('Arial', 14)).grid(row=0, column=3, padx=8, pady=5, sticky="e")
+        self.max_entry = tk.Entry(inputsFrame, textvariable=self.max_val, width=8, font=('Arial', 14), validate="key", validatecommand=max_vcmd)
+        self.max_entry.grid(row=0, column=4, padx=8, pady=5)
+
+        max_btns = tk.Frame(inputsFrame)
+        max_btns.grid(row=0, column=5)
+        tk.Button(max_btns, text="▲", width=2, command=lambda: self._step("max", +1)).pack()
+        tk.Button(max_btns, text="▼", width=2, command=lambda: self._step("max", -1)).pack()
 
         ##self.min_val.trace_add("write", lambda *args: self._enforce_after_change("min"))
         ##self.max_val.trace_add("write", lambda *args: self._enforce_after_change("max"))
 
-        self.button222 = tk.Button(inputsFrame, text="Show Message", font=('Arial', 18), command=self.show_message)
-        self.button222.grid(row=0, column=4, padx=8, pady=5)
 
-    def show_message(self):
-        print("min validate =", self.min_spin.cget("validate"))
-        print("max validate =", self.max_spin.cget("validate"))
 
+    def _step(self, which: str, delta: int) -> None:
+        var = self.min_val if which == "min" else self.max_val
+        other = self.max_val if which == "max" else self.min_val
+
+        # If the current box is blank/"-", decide a sensible starting point
+        try:
+            v = int(var.get())
+        except ValueError:
+            # Start from the other value if available, else 0
+            try:
+                v = int(other.get())
+            except ValueError:
+                v = 0
+        
+        v += delta
+
+        # Optional hard clamp to your overall bounds
+        v = max(-999999999, min(999999999, v))
+
+        # Avoid -0
+        if v == 0:
+            var.set("0")
+        else:
+            var.set(str(v))
 
     def _is_valid_int(self, proposed: str) -> bool:
         # Allow temporary typing states
@@ -143,9 +175,11 @@ class mainMenu(tk.Frame):
     def _validate_min(self, proposed: str) -> bool:
         print("VALIDATE MIN called with:", repr(proposed))
         # Proposed is what the entry would become after the keystroke
+        return self._is_valid_int(proposed)
+        """
         if not self._is_valid_int(proposed):
             return False
-
+        
         try:
             max_v = int(self.max_val.get())
         except ValueError:
@@ -155,12 +189,15 @@ class mainMenu(tk.Frame):
                 return False
 
         return proposed in ("", "-") or (int(proposed) <= max_v and int(proposed) >= -9999999)
+        """
         
     
 
     def _validate_max(self, proposed: str) -> bool:
         print("VALIDATE MAX called with:", repr(proposed))
         # Proposed is what the entry would become after the keystroke
+        return self._is_valid_int(proposed)
+        """
         if not self._is_valid_int(proposed):
             return False
 
@@ -173,6 +210,7 @@ class mainMenu(tk.Frame):
                 return False
 
         return proposed in ("", "-") or (int(proposed) >= min_v and int(proposed) <= 9999999)
+        """
 
 
 
