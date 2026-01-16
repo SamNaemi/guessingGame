@@ -28,10 +28,18 @@ class guessingGameGUI(tk.Tk):
 
         self.show("mainMenu")
 
+
+
+
+
     def show(self, name: str):
         self.frames[name].tkraise()
         
         self.center_window()
+
+
+
+
 
     def center_window(self) -> None:
         self.update_idletasks() #Ensure size info is correct
@@ -56,9 +64,12 @@ class guessingGameGUI(tk.Tk):
 
 
 
+
 class mainMenu(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)
+
+        self.bind("<Button-1>", lambda e: self.focus_set())
 
         welcomeLabel = tk.Label(self, text="Welcome to the Number Guessing Game!", font=('Arial', 24), justify="center")
         welcomeLabel.pack(padx=70, pady=20)
@@ -66,11 +77,10 @@ class mainMenu(tk.Frame):
         welcomeLabel2 = tk.Label(self, text="Your goal is to guess the number the computer is thinking off!", font=('Arial', 14), justify="center")
         welcomeLabel2.pack(padx=70)
 
-        playButton = tk.Button(self, text="Play", font=('Arial', 24), padx=20, command=lambda: app.show("playScreen")) #WRITE IN command=self.play_game()
+        playButton = tk.Button(self, text="Play", font=('Arial', 24), padx=20, command=lambda: self._play_button_logic(app)) #WRITE IN command=self.play_game()
         playButton.pack(pady=40)
 
         # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
         # Frame for the settings buttons
         switchesFrame = tk.Frame(self)
         switchesFrame.pack(pady=10)
@@ -81,7 +91,7 @@ class mainMenu(tk.Frame):
 
         hintSwitchCheckbutton = tk.Checkbutton(switchesFrame, text="Hints", font=('Arial', 14)) #Can make it so it says Maximum Attempts On and On is Green but if it is off make it say Maximum Attempts Off and Off is red
         hintSwitchCheckbutton.pack(side="left", padx=10)
-        ToolTip(hintSwitchCheckbutton, "Enables hints after incorrect guesses. Example: too high or too low")
+        ToolTip(hintSwitchCheckbutton, "Enables hints after incorrect guesses. Example: \"too high\" or \"too low\"")
 
         # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         # Frame for the two numeric scrolling input boxes
@@ -98,26 +108,34 @@ class mainMenu(tk.Frame):
         max_vcmd = (self.register(self._validate_max), "%P")
 
 
-        tk.Label(inputsFrame, text="Min:", font=('Arial', 14)).grid(row=0, column=0, padx=8, pady=5, sticky="e")
+        min_label = tk.Label(inputsFrame, text="Min:", font=('Arial', 14), padx=16)
+        min_label.grid(row=0, column=0, pady=5, sticky="e")
+        ToolTip(min_label, "Pick the lowest number the computer can pick from")
         self.min_entry = tk.Entry(inputsFrame, textvariable=self.min_val, width=8, font=('Arial', 14), validate="key", validatecommand=min_vcmd)
-        self.min_entry.grid(row=0, column=1, padx=8, pady=5)
+        self.min_entry.grid(row=0, column=1, padx=0, pady=5)
+        ToolTip(self.min_entry, "Pick the lowest number the computer can pick from")
 
         min_btns = tk.Frame(inputsFrame)
-        min_btns.grid(row=0, column=2, padx=(0, 10))
-        tk.Button(min_btns, text="▲", width=2, command=lambda: self._step("min", +1)).pack()
-        tk.Button(min_btns, text="▼", width=2, command=lambda: self._step("min", -1)).pack()
+        min_btns.grid(row=0, column=2, padx=(0, 16))
+        tk.Button(min_btns, text="▲", width=2, command=lambda: self._step("min", +1), font=('Arial', 6)).pack()
+        tk.Button(min_btns, text="▼", width=2, command=lambda: self._step("min", -1), font=('Arial', 6)).pack()
+        ToolTip(min_btns, "Pick the lowest number the computer can pick from")
 
-        tk.Label(inputsFrame, text="Max:", font=('Arial', 14)).grid(row=0, column=3, padx=8, pady=5, sticky="e")
+
+        max_label = tk.Label(inputsFrame, text="Max:", font=('Arial', 14), padx=16)
+        max_label.grid(row=0, column=3, pady=5, sticky="e")
+        ToolTip(max_label, "Pick the highest number the computer can pick from")
         self.max_entry = tk.Entry(inputsFrame, textvariable=self.max_val, width=8, font=('Arial', 14), validate="key", validatecommand=max_vcmd)
-        self.max_entry.grid(row=0, column=4, padx=8, pady=5)
+        self.max_entry.grid(row=0, column=4, padx=0, pady=5)
+        ToolTip(self.max_entry, "Pick the highest number the computer can pick from")
 
         max_btns = tk.Frame(inputsFrame)
         max_btns.grid(row=0, column=5)
-        tk.Button(max_btns, text="▲", width=2, command=lambda: self._step("max", +1)).pack()
-        tk.Button(max_btns, text="▼", width=2, command=lambda: self._step("max", -1)).pack()
+        tk.Button(max_btns, text="▲", width=2, command=lambda: self._step("max", +1), font=('Arial', 6)).pack()
+        tk.Button(max_btns, text="▼", width=2, command=lambda: self._step("max", -1), font=('Arial', 6)).pack()
+        ToolTip(max_btns, "Pick the highest number the computer can pick from")
 
-        ##self.min_val.trace_add("write", lambda *args: self._enforce_after_change("min"))
-        ##self.max_val.trace_add("write", lambda *args: self._enforce_after_change("max"))
+
 
 
 
@@ -146,6 +164,10 @@ class mainMenu(tk.Frame):
         else:
             var.set(str(v))
 
+
+
+
+
     def _is_valid_int(self, proposed: str) -> bool:
         # Allow temporary typing states
         if proposed in ("", "-"):
@@ -169,74 +191,45 @@ class mainMenu(tk.Frame):
         if len(num) > 1 and num.startswith("0"):
             return False
         
+        if int(num) < -9999999 or int(num) > 9999999:
+            return False
+        
         return True
         
-    
+
+
+
+
     def _validate_min(self, proposed: str) -> bool:
         print("VALIDATE MIN called with:", repr(proposed))
         # Proposed is what the entry would become after the keystroke
         return self._is_valid_int(proposed)
-        """
-        if not self._is_valid_int(proposed):
-            return False
-        
-        try:
-            max_v = int(self.max_val.get())
-        except ValueError:
-            if proposed in ("", "-") or int(proposed) >= -9999999:
-                return True
-            else:
-                return False
 
-        return proposed in ("", "-") or (int(proposed) <= max_v and int(proposed) >= -9999999)
-        """
         
     
+
 
     def _validate_max(self, proposed: str) -> bool:
         print("VALIDATE MAX called with:", repr(proposed))
         # Proposed is what the entry would become after the keystroke
         return self._is_valid_int(proposed)
-        """
-        if not self._is_valid_int(proposed):
-            return False
-
-        try:
-            min_v = int(self.min_val.get())
-        except ValueError:
-            if proposed in ("", "-") or int(proposed) <= 9999999:
-                return True
-            else:
-                return False
-
-        return proposed in ("", "-") or (int(proposed) >= min_v and int(proposed) <= 9999999)
-        """
 
 
 
 
-    def _enforce_after_change(self, which: str) -> None:
-        if getattr(self, "_enforcing", False):
-            return
-        self._enforcing = True
-        try:
-            if which == "min":
-                try:
-                    min_v = int(self.min_val.get())
-                except ValueError:
-                    self.max_spin.config(from_=-9999999)
-                    return
-                self.max_spin.config(from_=min_v)
-            else:
-                try:
-                    max_v = int(self.max_val.get())
-                except ValueError:
-                    self.min_spin.config(to=9999999)
-                    return
-                self.min_spin.config(to_=max_v)
-        finally:
-            self._enforcing = False
 
+    def _play_button_logic(self, app) -> None:
+        min_val = self.min_val.get()
+        max_val = self.max_val.get()
+        if min_val in ("", "-") or max_val in ("", "-"):
+            messagebox.showinfo(title="Message", message="Invalid entry to play")
+
+        min_val = int(min_val)
+        max_val = int(max_val)
+        if not (min_val <= max_val):
+            messagebox.showinfo(title="Message", message="Min has to be less than or equal to Max")
+        else:
+            app.show("playScreen")
 
 
 
