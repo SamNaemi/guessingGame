@@ -252,7 +252,8 @@ class playScreen(tk.Frame):
         newFrame = tk.Frame(mewFrame)
         newFrame.grid(row=0, column=1)
 
-        computerNumberLabel = tk.Label(newFrame, text="Computer Number: ?", font=('Arial', 20))
+        self.computerNumberLabel_value = tk.StringVar(value="Computer Number: ?")
+        computerNumberLabel = tk.Label(newFrame, textvariable=self.computerNumberLabel_value, font=('Arial', 20))
         computerNumberLabel.pack(padx=70, pady=20)
         ToolTip(computerNumberLabel, "The number of question marks does not denote the number of digits the computer number has")
 
@@ -279,7 +280,7 @@ class playScreen(tk.Frame):
 
 
         self.previous_guess = tk.StringVar()
-        self.previous_guess_label = tk.Label(newFrame, textvariable=self.previous_guess, font=('Arial', 18), wraplength=250, height=2)
+        self.previous_guess_label = tk.Label(newFrame, textvariable=self.previous_guess, font=('Arial', 18), wraplength=300, height=2)
         self.previous_guess_label.pack(pady=60)
 
 
@@ -306,8 +307,9 @@ class playScreen(tk.Frame):
         lookup_row = tk.Frame(lookup_frame)
         lookup_row.pack()
 
+        self.lookup_var_reuse = tk.StringVar()
         self.lookup_var = tk.StringVar()
-        self.lookup_entry = tk.Entry(lookup_row, textvariable=self.lookup_var, font=('Arial', 12), width=12)
+        self.lookup_entry = tk.Entry(lookup_row, textvariable=self.lookup_var, font=('Arial', 12), width=12, validate="key", validatecommand=vcmd)
         self.lookup_entry.pack(side="left")
 
         self.lookup_btn = tk.Button(lookup_row, text="Find", font=('Arial', 12), command=self.find_guess)
@@ -315,68 +317,6 @@ class playScreen(tk.Frame):
 
         self.lookup_status = tk.StringVar(value="")
         tk.Label(lookup_frame, textvariable=self.lookup_status, font=('Arial', 9)).pack(anchor="w")
-        
-        """computerNumberLabel = tk.Label(self, text="Computer Number: ?", font=('Arial', 20))
-        computerNumberLabel.pack(padx=70, pady=20)
-        ToolTip(computerNumberLabel, "The number of question marks does not denote the number of digits the computer number has")
-
-
-
-        inputsFrame = tk.Frame(self)
-        inputsFrame.pack(pady=(88, 20))
-        self.user_number = tk.StringVar()
-        self.user_number_entry = tk.Entry(inputsFrame, textvariable=self.user_number, width=8, font=('Arial', 20), validate="key", validatecommand=vcmd)
-        self.user_number_entry.grid(row=0, column=0, padx=16)
-
-        self.submit_button = tk.Button(inputsFrame, text="Submit", command=lambda: self.submit(), font=('Arial', 14))
-        self.submit_button.grid(row=0, column=1)
-
-
-        self.remaining_guesses_string = tk.StringVar()
-        self.remaining_guesses_label = tk.Label(self, textvariable=self.remaining_guesses_string, font=('Arial', 14))
-        self.remaining_guesses_label.pack()        
-
-
-        self.hint = tk.StringVar()
-        self.hint_label = tk.Label(self, textvariable=self.hint, font=('Arial', 14))
-        self.hint_label.pack(pady=(10,0))
-
-
-        self.previous_guess = tk.StringVar()
-        self.previous_guess_label = tk.Label(self, textvariable=self.previous_guess, font=('Arial', 18))
-        self.previous_guess_label.pack(pady=60)
-
-
-
-        history_outer = tk.Frame(self)
-        history_outer.pack(fill="both", expand=True, padx=30, pady=(10, 20))
-
-        tk.Label(history_outer, text="Guess History", font=('Arial', 14)).pack(anchor="w")
-
-        list_frame = tk.Frame(history_outer)
-        list_frame.pack(pady=5, anchor="w")
-
-        self.guess_listbox = tk.Listbox(list_frame, height=8, width=15, font=('Arial', 12))
-        self.guess_listbox.pack(side="left", fill="y")
-
-        scroll = tk.Scrollbar(list_frame, orient="vertical", command=self.guess_listbox.yview)
-        scroll.pack(side="left", fill="y")
-
-        self.guess_listbox.config(yscrollcommand=scroll.set)
-
-        lookup_frame = tk.Frame(history_outer)
-        lookup_frame.pack(fill="x")
-
-        self.lookup_var = tk.StringVar()
-        self.lookup_entry = tk.Entry(lookup_frame, textvariable=self.lookup_var, font=('Arial', 12), width=12)
-        self.lookup_entry.pack(side="left")
-
-        self.lookup_btn = tk.Button(lookup_frame, text="Find", font=('Arial', 12), command=self.find_guess)
-        self.lookup_btn.pack(side="left", padx=8)
-
-        self.lookup_status = tk.StringVar(value="")
-        tk.Label(lookup_frame, textvariable=self.lookup_status, font=('Arial', 11)).pack(side="left", padx=8)"""
-        
 
 
 
@@ -402,6 +342,14 @@ class playScreen(tk.Frame):
 
         self.computerNumber = random.randint(min_v, max_v)
         print(self.computerNumber)
+
+        self.guess_values = []
+
+        self.computerNumberLabel_value.set("Computer Number: ?")
+        self.user_number.set("")
+        self.hint.set("")
+        self.previous_guess.set("")
+        self.guess_listbox.delete(0, "end")
     
     
 
@@ -441,43 +389,90 @@ class playScreen(tk.Frame):
 
     def submit(self):
         user_number = self.user_number.get()
+        
         if user_number in ("", "-"):
             messagebox.showinfo(title="Message", message="Invalid submission")
             return
         
         user_number = int(user_number)
 
+        self.lookup_var_reuse.set(user_number)
+        if self.find_guess(1):
+            self.hint.set("Hint: You've already guessed that")
+            if self.app.hint_check_button.get() == True:
+                self.previous_guess.set("This guess did not use one of your guesses")
+            else:
+                self.previous_guess.set("")
+            return
+        
+        
+        self.guess_values.append(user_number)
+
         if user_number != self.computerNumber:
             if self.app.max_attempts_check_button.get() == True:
                 self.app.max_attempts_number.set(str(int(self.app.max_attempts_number.get()) - 1))
                 self.remaining_guesses_string.set(f"Number of Guesses Remaining: {self.app.max_attempts_number.get()}")
+                
+                if int(self.app.max_attempts_number.get()) == 0:
+                    self.computerNumberLabel_value.set(f"Computer Number: {self.computerNumber}")
+                    self.hint_check(user_number)
+                    self.previous_guess.set(f"You're previous guess of {user_number} was incorrect")
+                    self.lookup_var.set("")
+                    self.lookup_status.set("")
+                    if not messagebox.askyesno(title="You Lost", message=f"Unfortunately your guess was incorrect and you ran out of guesses\nThe computer number was {self.computerNumber}\nWould you like to play again?"):
+                        self.app.destroy()
+                        return
+                    else:
+                        self.app.show("mainMenu")
+
+
             self.previous_guess.set(f"You're previous guess of {user_number} was incorrect")
             
 
-            if self.app.hint_check_button.get() == True:
-                if user_number > self.computerNumber:
-                    result = "too high"
-                    self.hint.set("Hint: Your guess was too high")
-                else:
-                    result = "too low"
-                    self.hint.set("Hint: Your guess was too low")
-                self.guess_listbox.insert("end", f"{user_number} ({result})")
-                self.guess_listbox.see("end")
-            else:
-                self.guess_listbox.insert("end", f"{user_number}")
-                self.guess_listbox.see("end")
-
+        self.hint_check(user_number)
             
 
         if user_number == self.computerNumber:
-            print("You did it")
+            self.computerNumberLabel_value.set(f"Computer Number: {self.computerNumber}")
+            self.previous_guess.set(f"You're previous guess of {user_number} was correct")
+            self.lookup_var.set("")
+            self.lookup_status.set("")
+            if not messagebox.askyesno(title="You Won!", message=f"Congratulations on guessing the computer number!\nThe computer number was {self.computerNumber}\nWould you like to play again?"):
+                self.app.destroy()
+                return
+            else:
+                self.app.show("mainMenu")
+
+
+
+
+
+    def hint_check(self, user_number):
+        if self.app.hint_check_button.get() == True:
+            if user_number > self.computerNumber:
+                hint_text = "too high"
+                self.hint.set("Hint: Your guess was too high")
+            elif user_number < self.computerNumber:
+                hint_text = "too low"
+                self.hint.set("Hint: Your guess was too low")
+            else:
+                hint_text = "Correct"
+                self.hint.set("Hint: Correct")
+            self.guess_listbox.insert("end", f"{user_number} ({hint_text})")
+            self.guess_listbox.see("end")
+        else:
+            self.guess_listbox.insert("end", str(user_number))
+            self.guess_listbox.see("end")
 
 
         
 
 
-    def find_guess(self):
-        target = self.lookup_var.get().strip()
+    def find_guess(self, btn_where=0):
+        if btn_where == 0:
+            target = self.lookup_var.get().strip()
+        else:
+            target = self.lookup_var_reuse.get().strip()
         if target in ("", "-"):
             self.lookup_status.set("Enter a number to search.")
             return
@@ -488,17 +483,18 @@ class playScreen(tk.Frame):
             self.lookup_status("Not a valid number.")
             return
         
-        items = self.guess_listbox.get(0, "end")
-        for i, item in enumerate(items):
-            if str(target_int) in item:
+        for i, item in enumerate(self.guess_values):
+            if item == target_int:
                 self.guess_listbox.selection_clear(0, "end")
                 self.guess_listbox.selection_set(i)
                 self.guess_listbox.activate(i)
                 self.guess_listbox.see(i)
                 self.lookup_status.set("")
-                return
-            
-        self.lookup_status.set("Not found.")
+                return True
+        
+        if btn_where == 0:
+            self.lookup_status.set("Not found.")
+        return False
         
 
 
@@ -512,6 +508,7 @@ class playScreen(tk.Frame):
 class maxAttemptsScreen(tk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)
+        self.app = app
         tk.Label(self, text="How many attempts would you like to guess the computer number?", font=('Arial', 24), justify="center", wraplength=500).pack(padx=70, pady=20)
 
         vcmd = (self.register(self._is_valid_int), "%P")
@@ -563,6 +560,13 @@ class maxAttemptsScreen(tk.Frame):
                 app.show("playScreen")
         else:
             app.show("playScreen")
+
+    
+
+
+
+    def on_show(self):
+        self.app.max_attempts_number.set("")
 
 
 
