@@ -15,7 +15,7 @@ class guessingGameGUI(tk.Tk):
         super().__init__()
         self.title("Number Guessing Game")
         self.resizable(False, False)
-
+        
 
         container = tk.Frame(self)
         container.pack(padx=20, pady=20)
@@ -34,8 +34,6 @@ class guessingGameGUI(tk.Tk):
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-
-        
 
         self.show("mainMenu")
         self.after(0, self.center_window)
